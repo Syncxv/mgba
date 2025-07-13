@@ -1622,6 +1622,19 @@ void Window::setupMenu(QMenuBar* menubar) {
 	}, this);
 	m_config->updateOption("lockAspectRatio");
 
+	ConfigOption* focusOpt = m_config->addOption("ignoreWindowFocus");
+	focusOpt->addBoolean(tr("Process input when unfocused"), &m_actions, "av");
+	focusOpt->connect(
+	    [this](const QVariant& value) {
+		    if (value.toBool()) {
+			    m_inputController.registerNativeEventFilter();
+		    } else {
+			    m_inputController.unregisterNativeEventFilter();
+		    }
+	    },
+	    this);
+	m_config->updateOption("ignoreWindowFocus");
+
 	ConfigOption* lockIntegerScaling = m_config->addOption("lockIntegerScaling");
 	lockIntegerScaling->addBoolean(tr("Force integer scaling"), &m_actions, "av");
 	lockIntegerScaling->connect([this](const QVariant& value) {

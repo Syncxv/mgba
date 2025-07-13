@@ -147,6 +147,10 @@ ConfigController::ConfigController(QObject* parent)
 	m_opts.useBios = true;
 	m_opts.suspendScreensaver = true;
 	m_opts.lockAspectRatio = true;
+
+	m_opts.ignoreWindowFocus = false;
+	mCoreConfigSetDefaultIntValue(&m_config, "ignoreWindowFocus", m_opts.ignoreWindowFocus);
+
 	m_opts.interframeBlending = false;
 	mCoreConfigLoad(&m_config);
 	mCoreConfigLoadDefaults(&m_config, &m_opts);

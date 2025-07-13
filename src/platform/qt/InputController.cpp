@@ -6,15 +6,17 @@
 #include "InputController.h"
 
 #include "ConfigController.h"
-#include "input/Gamepad.h"
-#include "input/GamepadButtonEvent.h"
 #include "InputProfile.h"
 #include "LogController.h"
+#include "input/Gamepad.h"
+#include "input/GamepadButtonEvent.h"
 #include "utils.h"
 
 #include <QApplication>
+#include <QKeyEvent>
 #include <QTimer>
 #include <QWidget>
+
 #ifdef BUILD_QT_MULTIMEDIA
 #if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
 #include <QCameraInfo>
@@ -25,19 +27,40 @@
 #endif
 #endif
 
-#include <mgba/core/interface.h>
+#include "RawKeyboardFilter_win.h"
 #include <mgba-util/configuration.h>
+#include <mgba/core/interface.h>
 
 using namespace QGBA;
 
 int InputController::s_claimedPlayers = 0;
 
+void QGBA::InputController::enqueueKey(int qtKey, bool pressed) {
+	auto* e = new QKeyEvent(pressed ? QEvent::KeyPress : QEvent::KeyRelease, qtKey, Qt::NoModifier);
+	QCoreApplication::postEvent(m_topLevel ? m_topLevel : qApp->focusObject(), e);
+}
+
+void QGBA::InputController::registerNativeEventFilter() {
+	if (m_rawKb) {
+		return; // already registered
+	}
+	m_rawKb = std::make_unique<RawKeyboardFilterWin>(m_topLevel, this);
+	QCoreApplication::instance()->installNativeEventFilter(m_rawKb.get());
+}
+
+void QGBA::InputController::unregisterNativeEventFilter() {
+	if (!m_rawKb) {
+		return; // not registered
+	}
+	QCoreApplication::instance()->removeNativeEventFilter(m_rawKb.get());
+	m_rawKb.reset();
+}
+
 InputController::InputController(QWidget* topLevel, QObject* parent)
-	: QObject(parent)
-	, m_playerId(claimPlayer())
-	, m_topLevel(topLevel)
-	, m_focusParent(topLevel)
-{
+    : QObject(parent)
+    , m_playerId(claimPlayer())
+    , m_topLevel(topLevel)
+    , m_focusParent(topLevel) {
 	mInputMapInit(&m_inputMap, &GBAInputInfo);
 
 	connect(&m_gamepadTimer, &QTimer::timeout, [this]() {
@@ -72,7 +95,6 @@ InputController::InputController(QWidget* topLevel, QObject* parent)
 	mInputBindKey(&m_inputMap, KEYBOARD, Qt::Key_Down, GBA_KEY_DOWN);
 	mInputBindKey(&m_inputMap, KEYBOARD, Qt::Key_Left, GBA_KEY_LEFT);
 	mInputBindKey(&m_inputMap, KEYBOARD, Qt::Key_Right, GBA_KEY_RIGHT);
-
 
 #ifdef M_CORE_GBA
 	m_lux.p = this;
@@ -331,7 +353,6 @@ void InputController::setSensorDriver(uint32_t type) {
 	m_sensorDriver = type;
 }
 
-
 mRumble* InputController::rumble() {
 	auto driver = m_inputDrivers.value(m_sensorDriver);
 	if (driver) {
@@ -472,7 +493,9 @@ void InputController::testGamepad(uint32_t type) {
 	auto oldHats = m_activeHats;
 	m_activeHats = activeHats;
 
-	if (!QApplication::focusWidget()) {
+	bool ignoreFocus = m_config->getQtOption("ignoreWindowFocus").toBool();
+
+	if (!ignoreFocus && !QApplication::focusWidget()) {
 		return;
 	}
 
@@ -496,7 +519,7 @@ void InputController::testGamepad(uint32_t type) {
 		sendGamepadEvent(event);
 	}
 
-	if (!QApplication::focusWidget()) {
+	if (!ignoreFocus && !QApplication::focusWidget()) {
 		return;
 	}
 
@@ -668,7 +691,8 @@ void InputController::setupCam() {
 #if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
 	if (!m_camera) {
 		m_camera = std::make_unique<QCamera>(m_cameraDevice);
-		connect(m_camera.get(), &QCamera::statusChanged, this, &InputController::prepareCamSettings, Qt::QueuedConnection);
+		connect(m_camera.get(), &QCamera::statusChanged, this, &InputController::prepareCamSettings,
+		        Qt::QueuedConnection);
 	}
 	if (m_camera->status() == QCamera::UnavailableStatus) {
 		m_camera.reset();

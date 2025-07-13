@@ -34,8 +34,11 @@
 #endif
 #endif
 
+#include <RawKeyboardFilter_win.h>
+
 struct mRotationSource;
 struct mRumble;
+
 
 namespace QGBA {
 
@@ -53,6 +56,11 @@ public:
 		QT_MULTIMEDIA = 1,
 #endif
 	};
+
+	std::unique_ptr<RawKeyboardFilterWin> m_rawKb;
+	void enqueueKey(int qtKey, bool pressed);
+	void registerNativeEventFilter();
+	void unregisterNativeEventFilter();
 
 	static const uint32_t KEYBOARD = 0x51545F4B;
 
