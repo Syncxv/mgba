@@ -13,16 +13,8 @@ RawKeyboardFilterWin::RawKeyboardFilterWin(QWidget* target, QGBA::InputControlle
 }
 
 bool RawKeyboardFilterWin::nativeEventFilter(const QByteArray& type, void* message, long*) {
-	static bool firstHit = true;
-	if (firstHit) {
-		qDebug() << "WM_INPUT filter active – raw background keyboard enabled";
-		firstHit = false;
-	}
-
-
 	if (type != "windows_generic_MSG")
 		return false;
-
 
 	MSG* msg = static_cast<MSG*>(message);
 	if (msg->message != WM_INPUT)
@@ -68,27 +60,22 @@ void RawKeyboardFilterWin::registerDevice() {
 
 int RawKeyboardFilterWin::qtKeyFromVirtualKey(quint16 vk) const {
 	switch (vk) {
-	case VK_UP:
-		return Qt::Key_Up;
-	case VK_DOWN:
-		return Qt::Key_Down;
 	case VK_LEFT:
 		return Qt::Key_Left;
 	case VK_RIGHT:
 		return Qt::Key_Right;
-	case 'Z':
-		return Qt::Key_Z;
-	case 'X':
-		return Qt::Key_X;
-	case 'A':
-		return Qt::Key_A;
-	case 'S':
-		return Qt::Key_S;
+	case VK_UP:
+		return Qt::Key_Up;
+	case VK_DOWN:
+		return Qt::Key_Down;
 	case VK_RETURN:
 		return Qt::Key_Return;
 	case VK_BACK:
 		return Qt::Key_Backspace;
+
 	default:
+		if ((vk >= '0' && vk <= '9') || (vk >= 'A' && vk <= 'Z'))
+			return Qt::Key(vk);
 		return Qt::Key_unknown;
 	}
 }
