@@ -149,11 +149,11 @@ ConfigController::ConfigController(QObject* parent)
 	m_opts.lockAspectRatio = true;
 
 	m_opts.ignoreWindowFocus = false;
-	mCoreConfigSetDefaultIntValue(&m_config, "ignoreWindowFocus", m_opts.ignoreWindowFocus);
 
 	m_opts.interframeBlending = false;
 	mCoreConfigLoad(&m_config);
-	mCoreConfigLoadDefaults(&m_config, &m_opts);
+	mCoreConfigLoadDefaults(&m_config, &m_opts);	
+	mCoreConfigSetDefaultIntValue(&m_config, "ignoreWindowFocus", m_opts.ignoreWindowFocus);
 #ifdef M_CORE_GB
 	mCoreConfigSetDefaultIntValue(&m_config, "sgb.borders", 1);
 	mCoreConfigSetDefaultIntValue(&m_config, "gb.colors", GB_COLORS_CGB);
