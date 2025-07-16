@@ -41,6 +41,7 @@ struct mCoreOptions {
 	int width;
 	int height;
 	bool lockAspectRatio;
+	bool ignoreWindowFocus;
 	bool lockIntegerScaling;
 	bool interframeBlending;
 	bool resampleVideo;

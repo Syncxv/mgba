@@ -466,6 +466,7 @@ void SettingsView::updateConfig() {
 	saveSetting("frameskip", m_ui.frameskip);
 	saveSetting("autofireThreshold", m_ui.autofireThreshold);
 	saveSetting("lockAspectRatio", m_ui.lockAspectRatio);
+	saveSetting("ignoreWindowFocus ", m_ui.ignoreWindowFocus);
 	saveSetting("lockIntegerScaling", m_ui.lockIntegerScaling);
 	saveSetting("interframeBlending", m_ui.interframeBlending);
 	saveSetting("showOSD", m_ui.showOSD);
@@ -693,6 +694,7 @@ void SettingsView::reloadConfig() {
 	loadSetting("fpsTarget", m_ui.fpsTarget);
 	loadSetting("autofireThreshold", m_ui.autofireThreshold);
 	loadSetting("lockAspectRatio", m_ui.lockAspectRatio);
+	loadSetting("ignoreWindowFocus", m_ui.ignoreWindowFocus);
 	loadSetting("lockIntegerScaling", m_ui.lockIntegerScaling);
 	loadSetting("interframeBlending", m_ui.interframeBlending);
 	loadSetting("showOSD", m_ui.showOSD, true);

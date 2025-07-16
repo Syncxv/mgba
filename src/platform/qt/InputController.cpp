@@ -15,6 +15,7 @@
 #include <QApplication>
 #include <QTimer>
 #include <QWidget>
+#include <QKeyEvent>
 #ifdef BUILD_QT_MULTIMEDIA
 #include <QCameraInfo>
 #include <QVideoSurfaceFormat>
@@ -29,6 +30,27 @@ using namespace QGBA;
 int InputController::s_sdlInited = 0;
 mSDLEvents InputController::s_sdlEvents;
 #endif
+
+void QGBA::InputController::enqueueKey(int qtKey, bool pressed) {
+	auto* e = new QKeyEvent(pressed ? QEvent::KeyPress : QEvent::KeyRelease, qtKey, Qt::NoModifier);
+	QCoreApplication::postEvent(m_topLevel ? m_topLevel : qApp->focusObject(), e);
+}
+
+void QGBA::InputController::registerNativeEventFilter() {
+	if (m_rawKb) {
+		return; // already registered
+	}
+	m_rawKb = std::make_unique<RawKeyboardFilterWin>(m_topLevel, this);
+	QCoreApplication::instance()->installNativeEventFilter(m_rawKb.get());
+}
+
+void QGBA::InputController::unregisterNativeEventFilter() {
+	if (!m_rawKb) {
+		return; // not registered
+	}
+	QCoreApplication::instance()->removeNativeEventFilter(m_rawKb.get());
+	m_rawKb.reset();
+}
 
 InputController::InputController(int playerId, QWidget* topLevel, QObject* parent)
 	: QObject(parent)
@@ -603,7 +625,9 @@ void InputController::testGamepad(int type) {
 	auto oldHats = m_activeHats;
 	m_activeHats = activeHats;
 
-	if (!QApplication::focusWidget()) {
+	bool ignoreFocus = m_config->getQtOption("ignoreWindowFocus").toBool();
+
+	if (!ignoreFocus && !QApplication::focusWidget()) {
 		return;
 	}
 
@@ -627,9 +651,10 @@ void InputController::testGamepad(int type) {
 		sendGamepadEvent(event);
 	}
 
-	if (!QApplication::focusWidget()) {
+	if (!ignoreFocus && !QApplication::focusWidget()) {
 		return;
 	}
+
 
 	activeButtons.subtract(oldButtons);
 	oldButtons.subtract(m_activeButtons);

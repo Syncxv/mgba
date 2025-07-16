@@ -142,7 +142,8 @@ set(SOURCE_FILES
 	Window.cpp
 	VFileDevice.cpp
 	VideoProxy.cpp
-	VideoView.cpp)
+	VideoView.cpp
+	RawKeyboardFilter_win.cpp)
 
 set(UI_FILES
 	AboutScreen.ui
